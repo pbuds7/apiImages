@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -22,25 +24,46 @@ class _HomeScreenState extends State<HomeScreen> {
           itemCount: users.length,
           itemBuilder: (context, index) {
             final user = users[index];
-            final email = user['email'];
-            return ListTile(title: Text(email));
+            final name = user['name']['first'];
+            final city = user['location']['city'];
+            final country = user['location']['country'];
+            final imageUrl = user['picture']['thumbnail'];
+            final age = user['dob']['age'];
+            return ListTile(
+              leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(100),
+                  child: Image.network(imageUrl)),
+              title: Text(name),
+              subtitle: Text('$city, $country, $age'),
+            );
           }),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: fetchUsers,
+        label: const Text('Importar candidatos'),
       ),
     );
   }
 
   void fetchUsers() async {
     print('fetchUsers called');
-    const url = 'https://randomuser.me/api/?results=10';
-    final uri = Uri.parse(url);
-    final response = await http.get(uri);
-    final body = response.body;
-    final json = jsonDecode(body);
-    setState(() {
-      users = json['results'];
-    });
-    print('fetchUsers completed');
+    try {
+      const url = 'https://randomuser.me/api/?results=10';
+      final uri = Uri.parse(url);
+      final response = await http.get(uri);
+      switch (response.statusCode) {
+        case 200:
+          final body = response.body;
+          final json = jsonDecode(body);
+          setState(() {
+            users = json['results'];
+          });
+          print('fetchUsers completed');
+          break;
+        default:
+          throw Exception(e);
+      }
+    } catch (e) {
+      print('Error de conexión');
+    }
   }
 }
