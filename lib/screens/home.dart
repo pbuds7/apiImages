@@ -1,8 +1,9 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:swipe_deck/swipe_deck.dart';
+
+class Personaje {}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,33 +14,55 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> users = [];
+  var IMAGES = [];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Consumo de API Desarrollo Móvil'),
+        title: const Text('Presentación Imágenes de API'),
       ),
-      body: ListView.builder(
-          itemCount: users.length,
-          itemBuilder: (context, index) {
-            final user = users[index];
-            final name = user['name']['first'];
-            final city = user['location']['city'];
-            final country = user['location']['country'];
-            final imageUrl = user['picture']['thumbnail'];
-            final age = user['dob']['age'];
-            return ListTile(
-              leading: ClipRRect(
-                  borderRadius: BorderRadius.circular(100),
-                  child: Image.network(imageUrl)),
-              title: Text(name),
-              subtitle: Text('$city, $country, $age'),
-            );
-          }),
+      body: Center(
+        child: Container(
+          width: 600,
+          child: Center(
+            child: SwipeDeck(
+              startIndex: 3,
+              emptyIndicator: Container(
+                child: Center(
+                  child: Text("Nothing Here"),
+                ),
+              ),
+              cardSpreadInDegrees: 5, // Change the Spread of Background Cards
+              onSwipeLeft: () {
+                print("USER SWIPED LEFT -> GOING TO NEXT WIDGET");
+              },
+              onSwipeRight: () {
+                print("USER SWIPED RIGHT -> GOING TO PREVIOUS WIDGET");
+              },
+              onChange: (index) {
+                print(IMAGES[index]);
+              },
+              widgets: IMAGES
+                  .map((e) => GestureDetector(
+                        onTap: () {
+                          print(e);
+                        },
+                        child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20.0),
+                            child: Image.network(
+                              '$e',
+                              fit: BoxFit.cover,
+                            )),
+                      ))
+                  .toList(),
+            ),
+          ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: fetchUsers,
-        label: const Text('Importar candidatos'),
+        label: const Text('Mostrar Personajes'),
       ),
     );
   }
@@ -47,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void fetchUsers() async {
     print('fetchUsers called');
     try {
-      const url = 'https://randomuser.me/api/?results=10';
+      const url = 'https://rickandmortyapi.com/api/character';
       final uri = Uri.parse(url);
       final response = await http.get(uri);
       switch (response.statusCode) {
@@ -56,14 +79,19 @@ class _HomeScreenState extends State<HomeScreen> {
           final json = jsonDecode(body);
           setState(() {
             users = json['results'];
+            for (var character in users) {
+              final imageUrl = character['image'].toString();
+              IMAGES.add(imageUrl);
+            }
           });
           print('fetchUsers completed');
+          print(IMAGES);
           break;
         default:
-          throw Exception(e);
+          print('Erorr de conexión 1');
       }
     } catch (e) {
-      print('Error de conexión');
+      print('Error de conexión 2');
     }
   }
 }
