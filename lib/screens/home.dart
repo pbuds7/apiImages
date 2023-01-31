@@ -10,11 +10,15 @@ class HomeScreen extends StatefulWidget {
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
+
 }
+
 
 class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> users = [];
+  print('rendering');
   var IMAGES = [];
+ 
 
   @override
   Widget build(BuildContext context) {
