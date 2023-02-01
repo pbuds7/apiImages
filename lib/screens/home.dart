@@ -3,22 +3,24 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:swipe_deck/swipe_deck.dart';
 
-class Personaje {}
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
-
 }
-
 
 class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> users = [];
-  print('rendering');
-  var IMAGES = [];
- 
+
+  List<dynamic> images = [];
+  late Future<List> futureList;
+
+  @override
+  void initState() {
+    super.initState();
+    futureList = fetchUsers();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,38 +32,49 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           width: 600,
           child: Center(
-            child: SwipeDeck(
-              startIndex: 3,
-              emptyIndicator: Container(
-                child: Center(
-                  child: Text("Nothing Here"),
-                ),
-              ),
-              cardSpreadInDegrees: 5, // Change the Spread of Background Cards
-              onSwipeLeft: () {
-                print("USER SWIPED LEFT -> GOING TO NEXT WIDGET");
-              },
-              onSwipeRight: () {
-                print("USER SWIPED RIGHT -> GOING TO PREVIOUS WIDGET");
-              },
-              onChange: (index) {
-                print(IMAGES[index]);
-              },
-              widgets: IMAGES
-                  .map((e) => GestureDetector(
-                        onTap: () {
-                          print(e);
+              child: FutureBuilder<List>(
+                  future: futureList,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return SwipeDeck(
+                        startIndex: 3,
+                        emptyIndicator: Container(
+                          child: const Center(
+                            child: Text("Presione el botón"),
+                          ),
+                        ),
+                        cardSpreadInDegrees:
+                            5, // Change the Spread of Background Cards
+                        onSwipeLeft: () {
+                          debugPrint(
+                              "USER SWIPED LEFT -> GOING TO NEXT WIDGET");
                         },
-                        child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20.0),
-                            child: Image.network(
-                              '$e',
-                              fit: BoxFit.cover,
-                            )),
-                      ))
-                  .toList(),
-            ),
-          ),
+                        onSwipeRight: () {
+                          debugPrint(
+                              "USER SWIPED RIGHT -> GOING TO PREVIOUS WIDGET");
+                        },
+                        onChange: (index) {
+                          debugPrint(images[index]);
+                        },
+                        widgets: images
+                            .map((e) => GestureDetector(
+                                  onTap: () {
+                                    debugPrint(e);
+                                  },
+                                  child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(20.0),
+                                      child: Image.network(
+                                        '$e',
+                                        fit: BoxFit.cover,
+                                      )),
+                                ))
+                            .toList(),
+                      );
+                    } else if (snapshot.hasError) {
+                      return Text('${snapshot.error}');
+                    }
+                    return CircularProgressIndicator();
+                  })),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -71,8 +84,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void fetchUsers() async {
-    print('fetchUsers called');
+  Future<List> fetchUsers() async {
+    debugPrint('fetchUsers called');
     try {
       const url = 'https://rickandmortyapi.com/api/character';
       final uri = Uri.parse(url);
@@ -85,17 +98,19 @@ class _HomeScreenState extends State<HomeScreen> {
             users = json['results'];
             for (var character in users) {
               final imageUrl = character['image'].toString();
-              IMAGES.add(imageUrl);
+              images.add(imageUrl);
             }
           });
-          print('fetchUsers completed');
-          print(IMAGES);
-          break;
+          debugPrint('fetchUsers completed');
+          debugPrint(images.length.toString());
+          return images;
         default:
-          print('Erorr de conexión 1');
+          debugPrint('Erorr de proceso');
+          throw Exception('Falla en el proceso');
       }
     } catch (e) {
-      print('Error de conexión 2');
+      debugPrint('Error de conexión');
+      throw Exception('Falla en la conexión');
     }
   }
 }
